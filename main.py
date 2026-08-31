@@ -1,11 +1,12 @@
 """
 Ponto de Entrada Principal (Main)
 Responsável por iniciar o sistema, garantir a criação do banco de dados e exibir
-o menu principal que redireciona o usuário para os módulos de Clientes e Fornecedores.
+o menu principal que redireciona o usuário para os módulos de Clientes, Fornecedores e Produtos.
 """
 
 from menu_clientes import sub_menu_clientes
 from menu_fornecedores import sub_menu_fornecedores
+from menu_produtos import sub_menu_produtos
 from persistencia import inicializar_banco
 
 def menu_principal() -> None:
@@ -23,7 +24,8 @@ def menu_principal() -> None:
             print("=" * 40)
             print("1. Gestão de Clientes")
             print("2. Gestão de Fornecedores")
-            print("3. Sair do Sistema")
+            print("3. Gestão de Produtos")
+            print("4. Sair do Sistema")
             print("-" * 40)
 
             opcao = input("Digite a opção desejada: ").strip()
@@ -37,10 +39,12 @@ def menu_principal() -> None:
             case "2":
                 sub_menu_fornecedores()
             case "3":
+                sub_menu_produtos()
+            case "4":
                 print("\nSaindo do sistema... Até logo!")
                 break
             case _:
-                print("\n⚠️ Opção inválida! Escolha 1, 2 ou 3.")
+                print("\n⚠️ Opção inválida! Escolha 1, 2, 3 ou 4.")
 
 if __name__ == "__main__":
     menu_principal()
