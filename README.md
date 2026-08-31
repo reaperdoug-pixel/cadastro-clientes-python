@@ -17,7 +17,7 @@ Sistema de cadastro e gestão de entidades desenvolvido em Python com persistên
 A aplicação segue uma estrutura modular para facilitar a manutenção e escalabilidade do código:
 
 ```text
-Cadastro de Clientes/
+Sistema de Gestão/
 │
 ├── sistema.db              # Banco de dados SQLite (gerado automaticamente)
 ├── persistencia.py         # Camada de dados (conexões, consultas SQL e CRUD)
