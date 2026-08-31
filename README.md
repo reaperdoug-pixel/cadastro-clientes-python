@@ -1,0 +1,56 @@
+Markdown
+# 🏢 Sistema de Gestão de Clientes e Fornecedores
+
+Sistema de cadastro e gestão de entidades desenvolvido em Python com persistência em SQLite. O projeto utiliza uma arquitetura modular em camadas, separando as responsabilidades de interface (CLI), regras de negócio/validação e persistência de dados, incluindo regras de **Soft Delete** (exclusão lógica).
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Linguagem:** Python 3.x
+- **Banco de Dados:** SQLite3
+- **Biblioteca Nativa:** `re` (Expressões Regulares para validação e formatação)
+
+---
+
+## 🏗️ Arquitetura do Projeto
+
+A aplicação segue uma estrutura modular para facilitar a manutenção e escalabilidade do código:
+
+```text
+Cadastro de Clientes/
+│
+├── sistema.db              # Banco de dados SQLite (gerado automaticamente)
+├── persistencia.py         # Camada de dados (conexões, consultas SQL e CRUD)
+│
+├── validadores.py          # Validações de entradas (nome, e-mail, telefone, etc.)
+├── funcoes_clientes.py     # Regras de negócio do módulo de Clientes
+├── funcoes_fornecedores.py # Regras de negócio do módulo de Fornecedores (com máscara CNPJ)
+│
+├── menu_clientes.py        # Interface CLI para gestão de Clientes
+├── menu_fornecedores.py    # Interface CLI para gestão de Fornecedores
+└── main.py                 # Ponto de entrada do sistema
+🚀 Funcionalidades
+👥 Módulo de Clientes
+Cadastro de Clientes: Coleta e validação de nome, idade, sexo, e-mail e telefone.
+
+Listagem e Busca Inteligente: Consulta de clientes por trecho do nome (LIKE).
+
+Edição de Dados: Atualização de informações mantendo validações ativas.
+
+Inativação (Soft Delete): Inativação de registros para preservar o histórico no banco de dados.
+
+🏭 Módulo de Fornecedores
+Cadastro com Máscara de CNPJ: Formatação automática do CNPJ para o padrão XX.XXX.XXX/XXXX-XX.
+
+Validação de Unicidade: Garantia de CNPJ único por fornecedor (UNIQUE constraint).
+
+Consulta por CNPJ: Busca direta pelo documento formatado ou apenas numérico.
+
+Edição e Inativação Lógica: Atualização e desativação sem exclusão física do banco.
+
+
+Nota: O banco de dados sistema.db será criado e inicializado automaticamente na primeira execução.
+
+📝 Licença
+Este projeto foi desenvolvido para fins educacionais e de estudo.
