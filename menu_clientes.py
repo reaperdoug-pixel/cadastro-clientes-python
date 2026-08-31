@@ -1,3 +1,9 @@
+"""
+Módulo de Interface CLI: Clientes
+Responsável por exibir o submenu interativo para gerenciamento de clientes e
+direcionar as ações do usuário para as funções correspondentes.
+"""
+
 from funcoes_clientes import (
     cadastrar_cliente,
     listar_clientes,
@@ -7,7 +13,12 @@ from funcoes_clientes import (
 )
 from persistencia import inicializar_banco
 
-def sub_menu_clientes():
+def sub_menu_clientes() -> None:
+    """
+    Exibe o menu de opções para a gestão de clientes em loop interativo até que
+    o usuário opte por voltar ao menu principal ou interrompa o programa.
+    """
+    # Garante que o banco e as tabelas estejam acessíveis
     inicializar_banco()
 
     while True:

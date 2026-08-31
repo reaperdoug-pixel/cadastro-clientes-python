@@ -1,8 +1,18 @@
+"""
+Ponto de Entrada Principal (Main)
+Responsável por iniciar o sistema, garantir a criação do banco de dados e exibir
+o menu principal que redireciona o usuário para os módulos de Clientes e Fornecedores.
+"""
+
 from menu_clientes import sub_menu_clientes
 from menu_fornecedores import sub_menu_fornecedores
 from persistencia import inicializar_banco
 
-def menu_principal():
+def menu_principal() -> None:
+    """
+    Controla o fluxo do menu principal do sistema em um loop contínuo,
+    inicializando o banco de dados e roteando para os módulos de gestão.
+    """
     # Garante que o banco sistema.db e todas as tabelas existam ao abrir o sistema
     inicializar_banco()
 

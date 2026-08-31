@@ -1,16 +1,26 @@
+"""
+Módulo de Persistência de Dados
+Responsável por toda a comunicação com o banco de dados SQLite (sistema.db),
+incluindo criação de tabelas, consultas, inserções, atualizações e exclusão lógica (soft delete).
+"""
+
 import sqlite3
 
 NOME_BANCO = "sistema.db"
 
 # ==========================================
-# INICIALIZAÇÃO DO BANCO
+# INICIALIZAÇÃO DO BANCO DE DADOS
 # ==========================================
 
-def inicializar_banco():
+def inicializar_banco() -> None:
+    """
+    Cria o arquivo do banco de dados (se não existir) e inicializa as tabelas
+    'clientes' e 'fornecedores' com suas respectivas restrições e constraints.
+    """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()
 
-    # Tabela Clientes
+    # Tabela Clientes com campo 'ativo' para controle de Soft Delete
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS clientes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +33,7 @@ def inicializar_banco():
         );
     """)
 
-    # Tabela Fornecedores
+    # Tabela Fornecedores com constraint de validação de máscara de CNPJ e unicidade
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS fornecedores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,7 +56,13 @@ def inicializar_banco():
 # PERSISTÊNCIA: CLIENTES
 # ==========================================
 
-def salvar_cliente(cliente):
+def salvar_cliente(cliente: dict) -> None:
+    """
+    Insere um novo cliente ativo no banco de dados.
+    
+    Parâmetros:
+        cliente (dict): Dicionário contendo as chaves 'nome', 'idade', 'sexo', 'email' e 'telefone'.
+    """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()
 
@@ -65,7 +81,13 @@ def salvar_cliente(cliente):
     conn.close()
 
 
-def carregar_clientes():
+def carregar_clientes() -> list:
+    """
+    Recupera do banco de dados todos os clientes que estão com status ativo (ativo = 1).
+    
+    Retorno:
+        list[tuple]: Lista de tuplas contendo (id, nome, idade, sexo, email, telefone).
+    """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()
 
@@ -81,6 +103,15 @@ def carregar_clientes():
 
 
 def buscar_cliente_por_id_banco(cliente_id: int):
+    """
+    Busca um cliente ativo específico a partir do seu ID numérico.
+    
+    Parâmetros:
+        cliente_id (int): Identificador único do cliente.
+        
+    Retorno:
+        tuple | None: Dados do cliente se encontrado e ativo, ou None caso contrário.
+    """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()
 
@@ -95,7 +126,16 @@ def buscar_cliente_por_id_banco(cliente_id: int):
     return cliente
 
 
-def buscar_clientes_por_nome_banco(nome_busca: str):
+def buscar_clientes_por_nome_banco(nome_busca: str) -> list:
+    """
+    Busca clientes ativos cujo nome contenha o termo pesquisado (busca parcial / LIKE).
+    
+    Parâmetros:
+        nome_busca (str): Trecho ou nome completo para pesquisa.
+        
+    Retorno:
+        list[tuple]: Lista de clientes correspondentes ordenados alfabeticamente.
+    """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()
 
@@ -111,7 +151,14 @@ def buscar_clientes_por_nome_banco(nome_busca: str):
     return clientes
 
 
-def atualizar_cliente(cliente_id, dados_atualizados):
+def atualizar_cliente(cliente_id: int, dados_atualizados: dict) -> None:
+    """
+    Atualiza os dados cadastrais de um cliente existente no banco de dados.
+    
+    Parâmetros:
+        cliente_id (int): ID do cliente a ser atualizado.
+        dados_atualizados (dict): Dicionário com os novos dados (nome, idade, sexo, email, telefone).
+    """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()
 
@@ -132,7 +179,13 @@ def atualizar_cliente(cliente_id, dados_atualizados):
     conn.close()
 
 
-def inativar_cliente(cliente_id):
+def inativar_cliente(cliente_id: int) -> None:
+    """
+    Realiza a exclusão lógica (Soft Delete) de um cliente, alterando seu campo 'ativo' para 0.
+    
+    Parâmetros:
+        cliente_id (int): ID do cliente a ser inativado.
+    """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()
 
@@ -152,6 +205,21 @@ def inativar_cliente(cliente_id):
 
 def cadastrar_fornecedor_banco(cnpj: str, razao_social: str, nome_fantasia: str = "", 
                              endereco: str = "", uf: str = "", telefone: str = "", contato: str = "") -> bool:
+    """
+    Insere um novo fornecedor na tabela 'fornecedores'.
+    
+    Parâmetros:
+        cnpj (str): CNPJ formatado no padrão 'XX.XXX.XXX/XXXX-XX'.
+        razao_social (str): Razão Social da empresa.
+        nome_fantasia (str): Nome Fantasia (opcional).
+        endereco (str): Logradouro e número (opcional).
+        uf (str): Unidade Federativa de 2 letras (opcional).
+        telefone (str): Telefone de contato (opcional).
+        contato (str): Nome do responsável pelo contato (opcional).
+        
+    Retorno:
+        bool: True se o cadastro foi realizado com sucesso, False em caso de erro (ex: CNPJ duplicado).
+    """
     try:
         conn = sqlite3.connect(NOME_BANCO)
         cursor = conn.cursor()
@@ -174,6 +242,15 @@ def cadastrar_fornecedor_banco(cnpj: str, razao_social: str, nome_fantasia: str 
 
 
 def buscar_fornecedor_por_cnpj_banco(cnpj_formatado: str):
+    """
+    Busca um fornecedor ativo a partir do seu CNPJ formatado.
+    
+    Parâmetros:
+        cnpj_formatado (str): CNPJ com máscara completa.
+        
+    Retorno:
+        sqlite3.Row | None: Objeto com acesso por coluna (ex: fornecedor['razao_social']) ou None.
+    """
     conn = sqlite3.connect(NOME_BANCO)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -190,6 +267,16 @@ def buscar_fornecedor_por_cnpj_banco(cnpj_formatado: str):
 
 def atualizar_fornecedor_banco(id_fornecedor: int, cnpj: str, razao_social: str, nome_fantasia: str = "", 
                               endereco: str = "", uf: str = "", telefone: str = "", contato: str = "") -> bool:
+    """
+    Atualiza todos os dados de um fornecedor ativo pelo seu ID.
+    
+    Parâmetros:
+        id_fornecedor (int): Identificador único do fornecedor.
+        demais parâmetros: Novos dados cadastrais a serem persistidos.
+        
+    Retorno:
+        bool: True se atualizado com sucesso, False se o ID não existir ou houver erro de integridade.
+    """
     try:
         conn = sqlite3.connect(NOME_BANCO)
         cursor = conn.cursor()
@@ -216,6 +303,15 @@ def atualizar_fornecedor_banco(id_fornecedor: int, cnpj: str, razao_social: str,
 
 
 def inativar_fornecedor_banco(id_fornecedor: int) -> bool:
+    """
+    Realiza a exclusão lógica (Soft Delete) do fornecedor, alterando 'ativo' para 0.
+    
+    Parâmetros:
+        id_fornecedor (int): ID do fornecedor a ser inativado.
+        
+    Retorno:
+        bool: True se inativado com sucesso, False se não encontrado.
+    """
     try:
         conn = sqlite3.connect(NOME_BANCO)
         cursor = conn.cursor()
@@ -240,9 +336,16 @@ def inativar_fornecedor_banco(id_fornecedor: int) -> bool:
         print(f"❌ Erro ao inativar no banco: {err}")
         return False
 
-def buscar_fornecedores_por_nome_banco(termo_busca: str):
+
+def buscar_fornecedores_por_nome_banco(termo_busca: str) -> list:
     """
-    Busca fornecedores ativos cuja Razão Social ou Nome Fantasia contenham o termo digitado.
+    Busca fornecedores ativos cuja Razão Social ou Nome Fantasia contenham o termo pesquisado.
+    
+    Parâmetros:
+        termo_busca (str): Trecho do texto para pesquisa.
+        
+    Retorno:
+        list[tuple]: Lista de fornecedores correspondentes contendo (id, cnpj, razao_social, nome_fantasia, telefone, contato).
     """
     conn = sqlite3.connect(NOME_BANCO)
     cursor = conn.cursor()

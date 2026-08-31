@@ -1,3 +1,9 @@
+"""
+Módulo de Regras de Negócio: Clientes
+Responsável por orquestrar a interação com o usuário (coleta de dados via validadores),
+formatação e acionamento dos métodos de persistência para o gerenciamento de clientes.
+"""
+
 from validadores import (
     obter_nome_valido,
     obter_idade_valida,
@@ -18,9 +24,10 @@ from persistencia import (
 # REGRAS DE NEGÓCIO E INTERAÇÕES
 # ==========================================
 
-def cadastrar_cliente():
+def cadastrar_cliente() -> None:
     """
-    Coleta e valida as entradas do usuário para cadastrar um novo cliente.
+    Coleta os dados do novo cliente solicitando as entradas validadas
+    (nome, idade, sexo, e-mail e telefone) e persiste o novo registro no banco.
     """
     print("\n--- Cadastro de novo Cliente ---")
     nome = obter_nome_valido()
@@ -40,9 +47,9 @@ def cadastrar_cliente():
     print(f"\n✅ Cliente '{nome}' cadastrado com sucesso!")
 
 
-def listar_clientes():
+def listar_clientes() -> None:
     """
-    Exibe a lista de todos os clientes ativos no banco de dados.
+    Recupera e exibe em formato tabular todos os clientes ativos (ativo = 1).
     """
     print("\n--- Lista de Clientes Ativos ---")
     clientes = carregar_clientes()
@@ -56,9 +63,10 @@ def listar_clientes():
     print("-" * 75)
 
 
-def consultar_cliente():
+def consultar_cliente() -> None:
     """
-    Busca clientes ativos por trecho do nome informado pelo usuário.
+    Solicita um termo de busca ao usuário e lista todos os clientes ativos cujo
+    nome contenha a sequência de caracteres informada.
     """
     print("\n--- Consulta de Cliente por Nome ---")
     nome_busca = input("Digite o nome (ou parte dele) para pesquisar: ").strip()
@@ -79,9 +87,10 @@ def consultar_cliente():
     print("-" * 75)
 
 
-def editar_cliente():
+def editar_cliente() -> None:
     """
-    Solicita o ID de um cliente ativo, valida sua existência e atualiza os dados.
+    Lista os clientes ativos, solicita o ID do cliente desejado, valida se ele existe
+    e coleta os novos dados validados para atualizar o registro no banco.
     """
     print("\n--- Edição de Cliente ---")
     listar_clientes()
@@ -118,9 +127,10 @@ def editar_cliente():
     print("\n✅ Dados do cliente atualizados com sucesso!")
 
 
-def inativar_cliente_funcao():
+def inativar_cliente_funcao() -> None:
     """
-    Realiza a exclusão lógica (Soft Delete) do cliente após confirmação do usuário.
+    Solicita o ID de um cliente ativo, pede confirmação do usuário (S/N) e realiza
+    a exclusão lógica (Soft Delete) mantendo o registro no banco com ativo = 0.
     """
     print("\n--- Inativar Cliente (Soft Delete) ---")
     listar_clientes()
@@ -146,5 +156,5 @@ def inativar_cliente_funcao():
         print("\nOperação cancelada.")
 
 
-# Aliases para manter compatibilidade com o menu_clientes.py
+# Alias para manter compatibilidade com o menu_clientes.py
 excluir_cliente = inativar_cliente_funcao
