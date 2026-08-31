@@ -47,6 +47,7 @@ def obter_telefone_valido():
 def obter_nome_valido():
     while True:
         nome = input("Digite o nome do cliente: ").strip().title()
-        if not nome.isdigit() and len(nome) >= 3:
+        nome_sem_espacos = nome.replace(" ", "")
+        if len(nome_sem_espacos) >= 3 and nome_sem_espacos.isalpha():
             return nome     
-        print("Opção inválida! Digite um nome válido (apenas letras, mínimo 3 ).")
+        print("Opção inválida! Digite um nome válido (apenas letras, mínimo 3 caracteres).")

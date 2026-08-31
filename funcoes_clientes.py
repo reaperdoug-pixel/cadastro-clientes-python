@@ -1,4 +1,3 @@
-import re
 from validadores import (
     obter_nome_valido,
     obter_idade_valida,
@@ -14,25 +13,6 @@ from persistencia import (
     atualizar_cliente,
     inativar_cliente
 )
-
-# ==========================================
-# FUNÇÕES AUXILIARES DE VALIDAÇÃO
-# ==========================================
-
-def validar_email(email: str) -> bool:
-    """
-    Valida a estrutura básica de um e-mail utilizando regex.
-    """
-    padrao = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    return bool(re.match(padrao, email.strip()))
-
-
-def formatar_telefone(telefone: str) -> str:
-    """
-    Remove caracteres não numéricos do telefone.
-    """
-    return re.sub(r'\D', '', str(telefone))
-
 
 # ==========================================
 # REGRAS DE NEGÓCIO E INTERAÇÕES
