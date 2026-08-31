@@ -4,6 +4,12 @@ Sistema de cadastro e gestão comercial desenvolvido em Python com persistência
 
 ---
 
+## 📸 Demonstração do Sistema
+
+![Demonstração do Sistema](Print.png)
+
+---
+
 ## 🛠️ Tecnologias Utilizadas
 
 - **Linguagem:** Python 3.x
