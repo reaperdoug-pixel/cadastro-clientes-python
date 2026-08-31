@@ -5,3 +5,7 @@ sistema.db
 # Ignora pastas e arquivos de cache do Python
 __pycache__/
 *.pyc
+
+# Ignora diretrizes locais e configurações do assistente
+AGENTS.md
+.agents/
