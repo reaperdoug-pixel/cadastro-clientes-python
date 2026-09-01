@@ -1,6 +1,6 @@
-# 🏢 Sistema de Gestão Empresarial (Clientes, Fornecedores e Produtos)
+# 🏢 Sistema de Gestão Empresarial Multi-Filiais (ERP CLI)
 
-Sistema de cadastro e gestão comercial desenvolvido em Python com persistência em SQLite. O projeto utiliza uma arquitetura modular em camadas, separando as responsabilidades de interface (CLI), regras de negócio/validação e persistência de dados, com relacionamentos entre tabelas e regras de **Soft Delete** (exclusão lógica).
+Sistema completo de gestão comercial e controle de estoque multi-estabelecimentos desenvolvido em **Python** com persistência em **SQLite**. O projeto utiliza uma arquitetura modular em camadas, separando as responsabilidades de interface de linha de comando (CLI), regras de negócio/validação e persistência de dados, com relacionamentos relacionais, controle de concorrência com **transações atômicas**, auditoria de estoque (**Kardex**) e regras de **Soft Delete** (exclusão lógica).
 
 ---
 
@@ -13,9 +13,10 @@ Sistema de cadastro e gestão comercial desenvolvido em Python com persistência
 ## 🛠️ Tecnologias Utilizadas
 
 - **Linguagem:** Python 3.x
-- **Banco de Dados:** SQLite3 (com Chaves Estrangeiras e integridade referencial)
-- **Biblioteca Nativa:** `re` (Expressões Regulares para validação e formatação)
-- **Módulo `datetime`:** Rastreamento temporal de cadastros, edições gerais e alterações de preço.
+- **Banco de Dados:** SQLite3 com suporte a `PRAGMA foreign_keys = ON`, `ON DELETE CASCADE` e constraints de validação (`CHECK`, `UNIQUE`).
+- **Resiliência e Segurança:** Context Manager para transações atômicas com `ROLLBACK` automático e mecanismo de *retry* exponencial contra bloqueios de arquivo/disco.
+- **Rastreamento Temporal:** Módulo `datetime` para registro de datas de cadastro, alteração cadastral, atualização de preços e timestamps de auditoria de movimentações.
+- **Validações:** Validação estrutural de documentos (CNPJ com suporte a isenção), telefones com DDD, e-mails, markups, preços e tipos de movimentações.
 
 ---
 
@@ -26,82 +27,96 @@ A aplicação segue uma estrutura modular para facilitar a manutenção e escala
 ```text
 Sistema de Gestão/
 │
-├── sistema.db              # Banco de dados SQLite (gerado automaticamente)
-├── persistencia.py         # Camada de dados (conexões, consultas SQL, FKs e CRUD)
+├── sistema.db              # Banco de dados SQLite (gerado e migrado automaticamente)
+├── persistencia.py         # Camada de dados (conexão resiliente, transações atômicas, queries e migrações)
 │
-├── validadores.py          # Validações de entradas (nome, e-mail, telefone, preços, fornecedores, etc.)
+├── validadores.py          # Validações de entradas (clientes, produtos, filiais, preços, tipos e estoque)
 ├── funcoes_clientes.py     # Regras de negócio do módulo de Clientes
 ├── funcoes_fornecedores.py # Regras de negócio do módulo de Fornecedores (com máscara CNPJ)
-├── funcoes_produtos.py     # Regras de negócio de Produtos (vínculo com fornecedor, markup, datas e recálculo)
+├── funcoes_produtos.py     # Regras de negócio de Produtos (precificação por loja, saldos e Kardex)
+├── funcoes_filiais.py      # Regras de negócio de Filiais (CDs, Lojas Físicas/Virtuais e Transferência)
 │
 ├── menu_clientes.py        # Interface CLI para gestão de Clientes
 ├── menu_fornecedores.py    # Interface CLI para gestão de Fornecedores
-├── menu_produtos.py        # Interface CLI para gestão de Produtos
-└── main.py                 # Ponto de entrada do sistema
+├── menu_produtos.py        # Interface CLI para gestão de Produtos, Preços e Estoque
+├── menu_filiais.py         # Interface CLI para gestão de Filiais e Centros de Distribuição
+└── main.py                 # Ponto de entrada do sistema (Menu Principal)
 ```
 
 ---
 
-## 🚀 Funcionalidades
+## 🚀 Funcionalidades por Módulo
 
-### 👥 Módulo de Clientes
-- **Cadastro de Clientes:** Coleta e validação de nome, idade, sexo, e-mail e telefone.
-- **Listagem e Busca Inteligente:** Consulta de clientes por trecho do nome (`LIKE`).
-- **Edição de Dados:** Atualização de informações mantendo validações ativas.
-- **Inativação (Soft Delete):** Inativação de registros para preservar o histórico no banco de dados.
-
-### 🏭 Módulo de Fornecedores
-- **Cadastro com Máscara de CNPJ:** Formatação automática do CNPJ para o padrão `XX.XXX.XXX/XXXX-XX`.
-- **Validação de Unicidade:** Garantia de CNPJ único por fornecedor (`UNIQUE` constraint).
-- **Consulta por CNPJ:** Busca direta pelo documento formatado ou apenas numérico.
-- **Consulta por Razão Social / Fantasia:** Busca de fornecedores por termo.
-- **Edição e Inativação Lógica:** Atualização e desativação sem exclusão física do banco.
-
-### 📦 Módulo de Produtos
-- **Vínculo Obrigatório com Fornecedor:**
-  - O sistema impede o cadastro de produtos caso não existam fornecedores ativos cadastrados, orientando o usuário a cadastrar o fornecedor primeiro.
-  - Seleção interativa e validação do fornecedor responsável pelo produto.
-- **Precificação Inteligente e Markup Multiplicador:**
-  - Cálculo automático do preço de venda com base no índice multiplicador de markup: $\text{Preço de Venda} = \text{Preço de Custo} \times \text{Markup}$.
-    - Exemplo 1: Custo $\text{R\$} 15,00 \times \text{Markup } 2 = \text{R\$} 30,00$.
-    - Exemplo 2: Custo $\text{R\$} 10,00 \times \text{Markup } 1,86 = \text{R\$} 18,60$.
-  - Se o markup for definido como `0` (sem multiplicador), o sistema permite a digitação manual do preço de venda final.
-  - Recálculo automático do preço de venda sempre que o preço de custo ou o markup forem alterados na edição.
-- **Preço de Promoção (Preço Efetivo de Venda):**
-  - Permite definir um valor promocional manual para o produto.
-  - **Regra de Venda**: Se o preço de promoção for informado ($> 0$), o sistema utiliza automaticamente o valor promocional como preço final para a venda. Se estiver com $0$ ou vazio, utiliza o preço de venda normal.
-- **Rastreamento Temporal Completo de Datas:**
-  - `data_cadastro`: Registra data e hora da inclusão inicial do produto (`DD/MM/AAAA HH:MM:SS`).
-  - `data_alteracao`: Atualizada automaticamente a cada modificação cadastral ou geral do produto.
-  - `data_atualizacao_preco`: Registra especificamente o momento em que os preços de custo/markup/venda/promoção foram modificados.
-- **Listagem Tabular com JOIN:** Exibe ID, Nome do Produto, Fornecedor Vinculado, Custo, Markup (ex: `1.86x`), Preço de Venda, Preço de Promoção, Preço Final Praticado, Estoque, Categoria e Datas.
-- **Busca por Nome e Soft Delete:** Consulta detalhada e inativação lógica (`ativo = 0`) com confirmação de segurança.
+### 🏬 1. Módulo de Filiais e Centros de Distribuição (CDs)
+- **Classificação de Unidades:** Suporte a **Lojas Físicas**, **Centros de Distribuição (CD / Depósito)** e **Lojas Virtuais (E-Commerce)**.
+- **Flexibilidade Cadastral:** Código único de identificação (ex: `CD-MATRIZ`, `LOJA-01`, `ECOM`), Nome Fantasia, Razão Social, Telefone e Endereço.
+- **CNPJ com Isenção:** Aceita CNPJs formatados no padrão `XX.XXX.XXX/XXXX-XX` ou o valor `0` para unidades virtuais ou sem CNPJ próprio.
+- **Auto-vínculo de Produtos:** Ao cadastrar uma nova filial, todos os produtos já ativos ganham automaticamente suas tabelas de preços e saldos (zerados) inicializadas.
+- **Transferência de Estoque entre Unidades (CD ➔ Loja):**
+  - Permite transferir mercadorias de uma filial de origem para uma filial de destino em uma única transação atômica.
+  - Registro automático no Kardex com `TRANSFERENCIA_SAIDA` e `TRANSFERENCIA_ENTRADA`.
+- **Trava de Segurança na Inativação:** Impede a inativação de uma filial caso ela ainda possua saldo positivo de mercadorias em estoque (`quantidade > 0`).
 
 ---
 
-## 🔄 Histórico de Alterações e Melhorias
+### 📦 2. Módulo de Produtos, Preços e Estoque Segregado
+- **Separação de Saldos por Filial:** A quantidade em estoque foi desacoplada da tabela de produtos e agora é mantida por filial na tabela `saldos` (com suporte a estoque mínimo e alertas de reposição).
+- **Tabela de Preços e Promoções por Loja:**
+  - Precificação independente por filial na tabela `precos`.
+  - **Promoções Exclusivas:** Permite ativar um preço promocional para a **Loja A** (ex: R$ 35,00) mantendo o preço regular praticado na **Loja B** (ex: R$ 50,00).
+- **Markup Multiplicador e Recálculo Automático:**
+  - Cálculo automático: $\text{Preço de Venda} = \text{Preço de Custo} \times \text{Markup}$.
+  - Se markup for `0`, permite a digitação manual do preço de venda final.
+- **Vínculo Obrigatório com Fornecedores:** Bloqueia o cadastro caso não existam fornecedores ativos cadastrados.
+- **Rastreamento Temporal de Auditoria:** Rastreamento de `data_cadastro`, `data_alteracao` e `data_atualizacao_preco`.
 
-- **Validação Rigorosa de Nomes (`validadores.py`):**
-  - A função `obter_nome_valido()` foi refatorada para aceitar exclusivamente letras (incluindo caracteres acentuados) e espaços, exigindo no mínimo 3 caracteres alfabéticos e bloqueando números ou caracteres especiais misturados.
-- **Limpeza de Código e Otimização (`funcoes_clientes.py`):**
-  - Remoção de funções legadas/duplicadas que não eram utilizadas (`validar_email()` e `formatar_telefone()`).
-  - Remoção da importação não utilizada do módulo `re`, centralizando e padronizando todas as validações de entrada no módulo `validadores.py`.
-- **Correção da Estrutura da Documentação (`README.md`):**
-  - Formatação corrigida dos blocos de código e inclusão de seções detalhadas de funcionalidades e histórico.
+---
+
+### 📊 3. Auditoria de Estoque (Kardex)
+- **Histórico Completo de Movimentações:** Rastreamento cronológico de todas as alterações de estoque na tabela `movimentacoes_estoque`.
+- **Tipos de Movimentação Suportados:**
+  - `CADASTRO_INICIAL`: Saldo inicial definido no cadastro do produto.
+  - `ENTRADA`: Compras de fornecedores ou devoluções.
+  - `SAIDA`: Vendas ou baixas por avaria (com trava estrita contra saldo negativo).
+  - `AJUSTE`: Acertos e reconciliações de inventário físico.
+  - `TRANSFERENCIA_SAIDA` e `TRANSFERENCIA_ENTRADA`: Transferência entre CD e Lojas.
+- **Extrato Kardex Detalhado:** Consulta com saldo anterior, quantidade movimentada, novo saldo, data/hora e justificativa/motivo da operação.
+
+---
+
+### 👥 4. Módulo de Clientes
+- **Cadastro Completo:** Nome validado (apenas caracteres alfabéticos), idade (1 a 119 anos), sexo (M/F/O), e-mail estruturado e telefone com DDD formatado.
+- **Listagem e Busca Parcial:** Consulta por termo no nome (`LIKE`).
+- **Edição e Soft Delete:** Alteração de dados cadastrais e exclusão lógica (`ativo = 0`).
+
+---
+
+### 🏭 5. Módulo de Fornecedores
+- **Cadastro com Máscara de CNPJ:** Formatação e validação no padrão `XX.XXX.XXX/XXXX-XX` com constraint de unicidade (`UNIQUE`).
+- **Consultas Rápidas:** Busca por CNPJ formatado ou apenas dígitos, além de busca por Razão Social ou Nome Fantasia.
+- **Edição e Inativação Lógica:** Preservação de dados para integridade de produtos vinculados.
+
+---
+
+### 🛡️ 6. Trava de Segurança e Resiliência de Conexão
+- **Transações Atômicas:** Todas as operações multi-tabela (ex: salvar produto + preço + saldo + Kardex) são executadas sob o context manager `transacao_banco()`. Em caso de erro, ocorre `ROLLBACK` automático sem deixar registros órfãos.
+- **Retry Automático:** Em caso de bloqueio temporário de arquivo (`sqlite3.OperationalError`), o sistema realiza até 3 tentativas com backoff antes de interromper com aviso amigável.
+- **Migração Transparente:** O banco migra automaticamente tabelas de versões anteriores ao inicializar o sistema.
 
 ---
 
 ## ⚙️ Como Executar
 
-Para iniciar o sistema, execute o comando abaixo no terminal:
+1. Certifique-se de ter o Python 3.10+ instalado em seu sistema.
+2. Abra o terminal no diretório do projeto e execute:
 
 ```bash
 python main.py
 ```
 
-> **Nota:** O banco de dados `sistema.db` será criado e inicializado automaticamente na primeira execução caso ainda não exista.
+> **Nota:** O arquivo de banco de dados `sistema.db` será criado e inicializado automaticamente com as tabelas, índices e filiais padrão na primeira execução.
 
 ---
 
 ## 📝 Licença
-Este projeto foi desenvolvido para fins educacionais e de estudo.
+Este projeto foi desenvolvido para fins educacionais, comerciais e de estudo de boas práticas de arquitetura de software e engenharia de dados em Python.

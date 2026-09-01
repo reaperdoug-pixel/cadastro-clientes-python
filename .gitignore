@@ -5,3 +5,7 @@ sistema.db
 # Ignora pastas e arquivos de cache do Python
 __pycache__/
 *.pyc
+
+# Ignora arquivos de documentação temporária / walkthrough de desenvolvimento
+walkthrough.md
+implementation_plan.md

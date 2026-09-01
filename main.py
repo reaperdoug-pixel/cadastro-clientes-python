@@ -1,13 +1,16 @@
 """
 Ponto de Entrada Principal (Main)
 Responsável por iniciar o sistema, garantir a criação do banco de dados e exibir
-o menu principal que redireciona o usuário para os módulos de Clientes, Fornecedores e Produtos.
+o menu principal que redireciona o usuário para os módulos de Clientes, Fornecedores,
+Produtos e Filiais / Centros de Distribuição.
 """
 
 from menu_clientes import sub_menu_clientes
 from menu_fornecedores import sub_menu_fornecedores
 from menu_produtos import sub_menu_produtos
+from menu_filiais import sub_menu_filiais
 from persistencia import inicializar_banco
+
 
 def menu_principal() -> None:
     """
@@ -19,14 +22,15 @@ def menu_principal() -> None:
 
     while True:
         try:
-            print("\n" + "=" * 40)
-            print("       SISTEMA DE GESTÃO - MAIN        ")
-            print("=" * 40)
+            print("\n" + "=" * 42)
+            print("         SISTEMA DE GESTÃO - MAIN         ")
+            print("=" * 42)
             print("1. Gestão de Clientes")
             print("2. Gestão de Fornecedores")
             print("3. Gestão de Produtos")
-            print("4. Sair do Sistema")
-            print("-" * 40)
+            print("4. Gestão de Filiais e Depósitos (CD)")
+            print("5. Sair do Sistema")
+            print("-" * 42)
 
             opcao = input("Digite a opção desejada: ").strip()
         except (EOFError, KeyboardInterrupt):
@@ -41,10 +45,13 @@ def menu_principal() -> None:
             case "3":
                 sub_menu_produtos()
             case "4":
+                sub_menu_filiais()
+            case "5":
                 print("\nSaindo do sistema... Até logo!")
                 break
             case _:
-                print("\n⚠️ Opção inválida! Escolha 1, 2, 3 ou 4.")
+                print("\n⚠️ Opção inválida! Escolha um número de 1 a 5.")
+
 
 if __name__ == "__main__":
     menu_principal()

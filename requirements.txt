@@ -1,0 +1,20 @@
+# ==========================================
+# DEPENDÊNCIAS DO PROJETO
+# ==========================================
+# Este projeto foi construído utilizando exclusivamente a Biblioteca Padrão do Python (Python Standard Library),
+# não necessitando de bibliotecas externas de terceiros para execução em produção.
+#
+# Módulos Nativos Utilizados:
+# - sqlite3 (Persistência e transações atômicas com SQLite)
+# - datetime / time (Rastreamento temporal e auditoria Kardex)
+# - contextlib (Context manager para resiliência de transações de banco)
+# - re (Validações estruturais e expressões regulares)
+#
+# Versão Mínima do Python Recomendada:
+# Python >= 3.10 (para suporte nativo ao comando match/case e tipagem moderna)
+# ==========================================
+
+# Ferramentas Opcionais de Desenvolvimento, Testes e Qualidade de Código (Descomente se desejar instalar no ambiente virtual):
+# pytest>=8.0.0
+# flake8>=7.0.0
+# black>=24.0.0

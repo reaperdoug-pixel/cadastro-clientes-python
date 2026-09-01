@@ -8,9 +8,6 @@ def obter_idade_valida() -> int:
     """
     Solicita a idade do cliente via terminal e valida se é um número inteiro
     positivo em uma faixa aceitável (1 a 119 anos).
-    
-    Retorno:
-        int: Idade válida informada pelo usuário.
     """
     while True:
         entrada = input("Digite a idade do cliente: ").strip()
@@ -27,9 +24,6 @@ def obter_sexo_valido() -> str:
     """
     Solicita o sexo do cliente e valida se corresponde a uma das opções permitidas:
     M (Masculino), F (Feminino) ou O (Outro).
-    
-    Retorno:
-        str: Caractere em maiúsculo ('M', 'F' ou 'O').
     """
     while True:
         sexo = input("Digite o sexo do cliente (M/F/O): ").strip().upper()
@@ -42,9 +36,6 @@ def obter_email_valido() -> str:
     """
     Solicita o e-mail do cliente e realiza uma validação estrutural básica,
     assegurando a presença dos caracteres '@' e '.'.
-    
-    Retorno:
-        str: E-mail formatado em letras minúsculas.
     """
     while True:
         email = input("Digite o e-mail do cliente: ").strip().lower()
@@ -55,23 +46,16 @@ def obter_email_valido() -> str:
 
 def obter_telefone_valido() -> str:
     """
-    Solicita o telefone do cliente com DDD (10 ou 11 dígitos numéricos)
+    Solicita o telefone com DDD (10 ou 11 dígitos numéricos)
     e retorna o número formatado no padrão '(XX) XXXXX-XXXX' ou '(XX) XXXX-XXXX'.
-    
-    Retorno:
-        str: Telefone com máscara de formatação aplicada.
     """
     while True:
-        telefone = input("Digite o telefone do cliente com DDD (apenas números): ").strip()
-        
-        # Verifica se contém apenas números e tem 10 (fixo) ou 11 (celular) dígitos
+        telefone = input("Digite o telefone com DDD (apenas números): ").strip()
         if telefone.isdigit() and 10 <= len(telefone) <= 11:
             ddd = telefone[:2]
             meio = telefone[2:-4]
             fim = telefone[-4:]
-            
-            telefone_formatado = f"({ddd}) {meio}-{fim}"
-            return telefone_formatado
+            return f"({ddd}) {meio}-{fim}"
         print("Dado inválido! Digite apenas números do telefone com DDD (10 ou 11 dígitos).")
 
 
@@ -79,32 +63,21 @@ def obter_nome_valido() -> str:
     """
     Solicita o nome do cliente e valida se é composto exclusivamente por letras
     (com acentos) e espaços, exigindo no mínimo 3 caracteres alfabéticos.
-    
-    Retorno:
-        str: Nome com as primeiras letras de cada palavra em maiúsculo (Title Case).
     """
     while True:
         nome = input("Digite o nome do cliente: ").strip().title()
         nome_sem_espacos = nome.replace(" ", "")
-        
-        # Garante que possui ao menos 3 letras e nenhum número ou caractere especial
         if len(nome_sem_espacos) >= 3 and nome_sem_espacos.isalpha():
             return nome     
         print("Opção inválida! Digite um nome válido (apenas letras, mínimo 3 caracteres).")
 
 
 # ==========================================
-# VALIDADORES DE PRODUTO
+# VALIDADORES DE PRODUTO, PREÇOS E ESTOQUE
 # ==========================================
 
 def obter_preco_custo_valido() -> float:
-    """
-    Solicita o preço de custo do produto e valida se é um valor numérico positivo (> 0).
-    Aceita vírgula ou ponto como separador decimal.
-    
-    Retorno:
-        float: Preço de custo arredondado para 2 casas decimais.
-    """
+    """Solicita o preço de custo do produto e valida se é numérico positivo (> 0)."""
     while True:
         entrada = input("Digite o Preço de Custo (R$): ").strip().replace(",", ".")
         try:
@@ -117,16 +90,7 @@ def obter_preco_custo_valido() -> float:
 
 
 def obter_markup_valido() -> float:
-    """
-    Solicita o fator multiplicador de markup para o produto (>= 0).
-    Exemplos:
-        - 2: dobra o valor de custo (15 * 2 = 30.00)
-        - 1.86: multiplica por 1.86 (10 * 1.86 = 18.60)
-        - 0: não utiliza markup multiplicador e permite informar o preço de venda manualmente.
-    
-    Retorno:
-        float: Índice multiplicador de markup (ex: 2.0, 1.86 ou 0).
-    """
+    """Solicita o fator multiplicador de markup para o produto (>= 0)."""
     while True:
         entrada = input("Digite o Markup multiplicador (ex: 2 para dobrar, 1.86 ou 0 para preço manual): ").strip().replace(",", ".")
         try:
@@ -139,15 +103,7 @@ def obter_markup_valido() -> float:
 
 
 def obter_preco_venda_valido(preco_custo: float = None) -> float:
-    """
-    Solicita o preço de venda manual e valida se é um valor numérico positivo (> 0).
-    
-    Parâmetros:
-        preco_custo (float, opcional): Se fornecido, avisa caso a venda seja inferior ao custo.
-        
-    Retorno:
-        float: Preço de venda validado.
-    """
+    """Solicita o preço de venda manual e valida se é positivo (> 0)."""
     while True:
         entrada = input("Digite o Preço de Venda Final (R$): ").strip().replace(",", ".")
         try:
@@ -162,14 +118,9 @@ def obter_preco_venda_valido(preco_custo: float = None) -> float:
 
 
 def obter_quantidade_valida() -> int:
-    """
-    Solicita a quantidade em estoque do produto e valida se é um número inteiro >= 0.
-    
-    Retorno:
-        int: Quantidade em estoque.
-    """
+    """Solicita a quantidade em estoque do produto (>= 0)."""
     while True:
-        entrada = input("Digite a quantidade em estoque: ").strip()
+        entrada = input("Digite a quantidade inicial em estoque: ").strip()
         try:
             qtd = int(entrada)
             if qtd >= 0:
@@ -179,13 +130,23 @@ def obter_quantidade_valida() -> int:
             print("Dado inválido! Digite um número inteiro.")
 
 
+def obter_estoque_minimo_valido() -> int:
+    """Solicita o estoque mínimo do produto (>= 0)."""
+    while True:
+        entrada = input("Digite o estoque mínimo de segurança (pressione Enter para 0): ").strip()
+        if not entrada:
+            return 0
+        try:
+            est_min = int(entrada)
+            if est_min >= 0:
+                return est_min
+            print("Dado inválido! O estoque mínimo não pode ser negativo.")
+        except ValueError:
+            print("Dado inválido! Digite um número inteiro válido.")
+
+
 def obter_nome_produto_valido() -> str:
-    """
-    Solicita o nome/descrição do produto e garante que tenha pelo menos 2 caracteres.
-    
-    Retorno:
-        str: Nome do produto formatado em Title Case.
-    """
+    """Solicita o nome do produto (mínimo 2 caracteres)."""
     while True:
         nome = input("Digite o nome do produto: ").strip().title()
         if len(nome) >= 2:
@@ -194,26 +155,13 @@ def obter_nome_produto_valido() -> str:
 
 
 def obter_categoria_valida() -> str:
-    """
-    Solicita a categoria do produto (opcional).
-    
-    Retorno:
-        str: Categoria formatada em Title Case ou vazia.
-    """
+    """Solicita a categoria do produto (opcional)."""
     cat = input("Digite a categoria do produto (opcional): ").strip().title()
     return cat
 
 
 def obter_fornecedor_id_valido(ids_permitidos: list) -> int:
-    """
-    Solicita e valida a seleção de um fornecedor a partir de uma lista de IDs ativos existentes.
-    
-    Parâmetros:
-        ids_permitidos (list[int]): Lista de IDs numéricos de fornecedores ativos válidos.
-        
-    Retorno:
-        int: ID do fornecedor validado e selecionado pelo usuário.
-    """
+    """Solicita e valida o ID de fornecedor existente."""
     while True:
         entrada = input("Digite o ID do Fornecedor vinculado ao produto: ").strip()
         try:
@@ -226,16 +174,7 @@ def obter_fornecedor_id_valido(ids_permitidos: list) -> int:
 
 
 def obter_preco_promocao_valido(preco_venda: float = None) -> float:
-    """
-    Solicita o preço promocional do produto (opcional).
-    Se o valor for 0, vazio ou nulo, indica que o produto não está em promoção e utilizará o preço normal.
-    
-    Parâmetros:
-        preco_venda (float, opcional): Preço de venda normal para conferência/aviso.
-        
-    Retorno:
-        float: Preço promocional validado ou 0.0 caso não esteja em promoção.
-    """
+    """Solicita o preço promocional do produto (opcional, 0 se sem promoção)."""
     while True:
         entrada = input("Preço Promocional em R$ (pressione Enter ou digite 0 para sem promoção): ").strip().replace(",", ".")
         if not entrada or entrada == "0":
@@ -250,3 +189,158 @@ def obter_preco_promocao_valido(preco_venda: float = None) -> float:
             return round(promo, 2)
         except ValueError:
             print("❌ Dado inválido! Digite um valor numérico para a promoção ou pressione Enter para 0.")
+
+
+def obter_loja_id_valido(ids_lojas_permitidos: list, permitir_geral: bool = False) -> int:
+    """Solicita e valida a seleção de uma filial a partir dos IDs válidos."""
+    while True:
+        if permitir_geral:
+            entrada = input("Digite o ID da Loja/Filial (ou Enter para todas): ").strip()
+            if not entrada:
+                return 0
+        else:
+            entrada = input("Digite o ID da Loja/Filial desejada: ").strip()
+            
+        try:
+            loja_id = int(entrada)
+            if loja_id in ids_lojas_permitidos:
+                return loja_id
+            print(f"❌ Filial ID {loja_id} não encontrada na lista!")
+        except ValueError:
+            print("❌ ID inválido! Digite o número correspondente à filial.")
+
+
+def obter_tipo_movimentacao_valido() -> str:
+    """Solicita e valida o tipo de movimentação de estoque."""
+    while True:
+        print("\nTipos de Movimentação:")
+        print("1. ENTRADA (Acrescentar ao saldo)")
+        print("2. SAÍDA (Subtrair do saldo)")
+        print("3. AJUSTE (Definir novo saldo exato por inventário)")
+        
+        opcao = input("Escolha o tipo de movimentação (1/2/3): ").strip()
+        match opcao:
+            case "1":
+                return "ENTRADA"
+            case "2":
+                return "SAIDA"
+            case "3":
+                return "AJUSTE"
+            case _:
+                print("❌ Opção inválida! Escolha 1, 2 ou 3.")
+
+
+def obter_motivo_movimentacao() -> str:
+    """Solicita a justificativa para a movimentação de estoque."""
+    while True:
+        motivo = input("Digite o motivo/justificativa da movimentação: ").strip()
+        if len(motivo) >= 3:
+            return motivo
+        print("❌ Motivo muito curto! Digite uma descrição clara (mínimo 3 caracteres).")
+
+
+def obter_quantidade_movimentacao_valida() -> int:
+    """Solicita a quantidade a movimentar (> 0)."""
+    while True:
+        entrada = input("Digite a quantidade a movimentar: ").strip()
+        try:
+            qtd = int(entrada)
+            if qtd > 0:
+                return qtd
+            print("❌ Dado inválido! A quantidade deve ser maior que zero.")
+        except ValueError:
+            print("❌ Dado inválido! Digite um número inteiro.")
+
+
+# ==========================================
+# VALIDADORES DE FILIAIS E CENTROS DE DISTRIBUIÇÃO
+# ==========================================
+
+def obter_tipo_filial_valido() -> str:
+    """
+    Solicita o tipo de estabelecimento:
+    1. LOJA_FISICA (Loja padrão)
+    2. CENTRO_DISTRIBUICAO (CD / Depósito Central)
+    3. LOJA_VIRTUAL (E-Commerce / Marketplace)
+    """
+    while True:
+        print("\nTipo de Estabelecimento:")
+        print("1. Loja Física")
+        print("2. Centro de Distribuição (CD / Depósito)")
+        print("3. Loja Virtual / E-Commerce")
+        
+        opcao = input("Selecione o tipo (1/2/3): ").strip()
+        match opcao:
+            case "1":
+                return "LOJA_FISICA"
+            case "2":
+                return "CENTRO_DISTRIBUICAO"
+            case "3":
+                return "LOJA_VIRTUAL"
+            case _:
+                print("❌ Opção inválida! Escolha 1, 2 ou 3.")
+
+
+def obter_codigo_filial_valido() -> str:
+    """Solicita um código curto alfanumérico para identificação rápida da filial."""
+    while True:
+        codigo = input("Digite o Código da Filial (ex: CD-01, LOJA-CENTRO, ECOM): ").strip().upper()
+        if len(codigo) >= 2 and not " " in codigo:
+            return codigo
+        print("❌ Código inválido! O código deve ter pelo menos 2 caracteres e não pode conter espaços.")
+
+
+def obter_nome_fantasia_filial_valido() -> str:
+    """Solicita o Nome Fantasia da Filial."""
+    while True:
+        nome = input("Digite o Nome Fantasia da Filial/CD: ").strip().title()
+        if len(nome) >= 2:
+            return nome
+        print("❌ Nome Fantasia muito curto! Digite no mínimo 2 caracteres.")
+
+
+def obter_razao_social_filial_valida() -> str:
+    """Solicita a Razão Social da Filial (opcional)."""
+    razao = input("Digite a Razão Social (opcional, Enter para vazio): ").strip().title()
+    return razao
+
+
+def obter_cnpj_filial_valido() -> str:
+    """
+    Solicita o CNPJ da filial.
+    Se o cliente digitar '0' ou pressionar Enter, considera '0' (Sem CNPJ / Loja Virtual).
+    Caso contrário, valida se possui 14 dígitos numéricos e formata como XX.XXX.XXX/XXXX-XX.
+    """
+    while True:
+        entrada = input("Digite o CNPJ da Filial (apenas números ou '0' se não possuir CNPJ próprio): ").strip()
+        
+        if entrada == "0" or not entrada:
+            return "0"
+            
+        cnpj_limpo = entrada.replace(".", "").replace("/", "").replace("-", "").strip()
+        
+        if len(cnpj_limpo) == 14 and cnpj_limpo.isdigit():
+            # Aplica máscara de CNPJ
+            cnpj_fmt = f"{cnpj_limpo[:2]}.{cnpj_limpo[2:5]}.{cnpj_limpo[5:8]}/{cnpj_limpo[8:12]}-{cnpj_limpo[12:]}"
+            return cnpj_fmt
+            
+        print("❌ CNPJ inválido! Digite 14 números para CNPJ ou '0' para Isento / Sem CNPJ.")
+
+
+def obter_telefone_filial_valido() -> str:
+    """Solicita o telefone da filial (opcional)."""
+    telefone = input("Digite o Telefone com DDD (ou Enter para vazio): ").strip()
+    if not telefone:
+        return "-"
+    if telefone.isdigit() and 10 <= len(telefone) <= 11:
+        ddd = telefone[:2]
+        meio = telefone[2:-4]
+        fim = telefone[-4:]
+        return f"({ddd}) {meio}-{fim}"
+    return telefone
+
+
+def obter_endereco_filial_valido() -> str:
+    """Solicita o endereço da filial (opcional)."""
+    endereco = input("Digite o Endereço completo (ou Enter para vazio): ").strip()
+    return endereco if endereco else "-"
