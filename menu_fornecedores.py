@@ -23,9 +23,9 @@ def sub_menu_fornecedores() -> None:
 
     while True:
         try:
-            print("\n" + "=" * 45)
-            print("       GESTÃO DE FORNECEDORES          ")
-            print("=" * 45)
+            print("\n" + "=" * 48)
+            print("       DEGEHUB ERP | GESTÃO DE FORNECEDORES     ")
+            print("=" * 48)
             print("1. Cadastrar Fornecedor")
             print("2. Consultar Fornecedor por CNPJ")
             print("3. Consultar por Razão Social / Nome Fantasia")

@@ -1,8 +1,7 @@
 """
-Ponto de Entrada Principal (Main)
-Responsável por iniciar o sistema, garantir a criação do banco de dados e exibir
-o menu principal que redireciona o usuário para os módulos de Clientes, Fornecedores,
-Produtos e Filiais / Centros de Distribuição.
+DEGEHUB ERP • Ponto de Entrada Principal (Main)
+Plataforma integrada de gestão empresarial multi-filiais:
+Clientes, Fornecedores, Produtos, Estoque Kardex e Centros de Distribuição.
 """
 
 from menu_clientes import sub_menu_clientes
@@ -14,7 +13,7 @@ from persistencia import inicializar_banco
 
 def menu_principal() -> None:
     """
-    Controla o fluxo do menu principal do sistema em um loop contínuo,
+    Controla o fluxo do menu principal do DegeHub ERP em um loop contínuo,
     inicializando o banco de dados e roteando para os módulos de gestão.
     """
     # Garante que o banco sistema.db e todas as tabelas existam ao abrir o sistema
@@ -22,19 +21,20 @@ def menu_principal() -> None:
 
     while True:
         try:
-            print("\n" + "=" * 42)
-            print("         SISTEMA DE GESTÃO - MAIN         ")
-            print("=" * 42)
+            print("\n" + "=" * 52)
+            print("         DEGEHUB ERP • SISTEMA DE GESTÃO         ")
+            print("               Multi-Filiais v2.0               ")
+            print("=" * 52)
             print("1. Gestão de Clientes")
             print("2. Gestão de Fornecedores")
-            print("3. Gestão de Produtos")
+            print("3. Gestão de Produtos e Estoque")
             print("4. Gestão de Filiais e Depósitos (CD)")
             print("5. Sair do Sistema")
-            print("-" * 42)
+            print("-" * 52)
 
             opcao = input("Digite a opção desejada: ").strip()
         except (EOFError, KeyboardInterrupt):
-            print("\n\nSaindo do sistema... Até logo!")
+            print("\n\nSaindo do DegeHub ERP... Até logo!")
             break
 
         match opcao:
@@ -47,7 +47,7 @@ def menu_principal() -> None:
             case "4":
                 sub_menu_filiais()
             case "5":
-                print("\nSaindo do sistema... Até logo!")
+                print("\nSaindo do DegeHub ERP... Até logo!")
                 break
             case _:
                 print("\n⚠️ Opção inválida! Escolha um número de 1 a 5.")

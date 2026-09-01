@@ -1,5 +1,5 @@
 """
-Módulo de Interface CLI: Clientes
+DEGEHUB ERP • Módulo de Interface CLI: Clientes
 Responsável por exibir o submenu interativo para gerenciamento de clientes e
 direcionar as ações do usuário para as funções correspondentes.
 """
@@ -13,6 +13,7 @@ from funcoes_clientes import (
 )
 from persistencia import inicializar_banco
 
+
 def sub_menu_clientes() -> None:
     """
     Exibe o menu de opções para a gestão de clientes em loop interativo até que
@@ -23,16 +24,16 @@ def sub_menu_clientes() -> None:
 
     while True:
         try:
-            print("\n" + "=" * 35)
-            print("       GESTÃO DE CLIENTES          ")
-            print("=" * 35)
+            print("\n" + "=" * 46)
+            print("         DEGEHUB ERP | GESTÃO DE CLIENTES     ")
+            print("=" * 46)
             print("1. Cadastrar Cliente")
             print("2. Listar Todos os Clientes")
             print("3. Consultar Cliente por Nome")
             print("4. Editar Cliente")
-            print("5. Inativar Cliente") 
+            print("5. Inativar Cliente (Soft Delete)") 
             print("6. Voltar ao Menu Principal")
-            print("-" * 35)
+            print("-" * 46)
 
             opcao = input("Digite o número da opção desejada: ").strip()
         except (EOFError, KeyboardInterrupt):

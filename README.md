@@ -1,6 +1,6 @@
-# 🏢 Sistema de Gestão Empresarial Multi-Filiais (ERP CLI)
+# 🏢 DegeHub ERP • Sistema de Gestão Empresarial Multi-Filiais
 
-Sistema completo de gestão comercial e controle de estoque multi-estabelecimentos desenvolvido em **Python** com persistência em **SQLite**. O projeto utiliza uma arquitetura modular em camadas, separando as responsabilidades de interface de linha de comando (CLI), regras de negócio/validação e persistência de dados, com relacionamentos relacionais, controle de concorrência com **transações atômicas**, auditoria de estoque (**Kardex**) e regras de **Soft Delete** (exclusão lógica).
+**DegeHub ERP** é uma plataforma de gestão comercial e controle de estoque multi-estabelecimentos desenvolvida em **Python** com persistência relacional em **SQLite**. O projeto utiliza uma arquitetura modular em camadas, separando as responsabilidades de interface de linha de comando (CLI), regras de negócio/validação e persistência de dados, com relacionamentos relacionais, controle de concorrência com **transações atômicas**, auditoria de estoque (**Kardex**) e regras de **Soft Delete** (exclusão lógica).
 
 ---
 

@@ -6,6 +6,7 @@ sistema.db
 __pycache__/
 *.pyc
 
-# Ignora arquivos de documentação temporária / walkthrough de desenvolvimento
+# Ignora arquivos de documentação temporária, walkthrough e roteiro de estudos
 walkthrough.md
 implementation_plan.md
+sugestoes_estudo_evolucao.md

@@ -712,6 +712,10 @@ def buscar_fornecedores_por_razao_banco(termo_busca: str) -> list:
         return cursor.fetchall()
 
 
+# Alias de compatibilidade
+buscar_fornecedores_por_nome_banco = buscar_fornecedores_por_razao_banco
+
+
 # ==========================================
 # PERSISTÊNCIA: PRODUTOS, SALDOS, PREÇOS & KARDEX
 # ==========================================

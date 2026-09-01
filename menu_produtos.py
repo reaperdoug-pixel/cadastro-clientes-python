@@ -29,9 +29,9 @@ def sub_menu_produtos() -> None:
 
     while True:
         try:
-            print("\n" + "=" * 45)
-            print("             GESTÃO DE PRODUTOS              ")
-            print("=" * 45)
+            print("\n" + "=" * 48)
+            print("     DEGEHUB ERP | GESTÃO DE PRODUTOS & ESTOQUE   ")
+            print("=" * 48)
             print("1. Cadastrar Produto")
             print("2. Listar Produtos (por Filial/Loja)")
             print("3. Consultar Produto por Nome (Visão Geral)")

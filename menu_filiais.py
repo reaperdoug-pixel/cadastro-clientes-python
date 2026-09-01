@@ -25,9 +25,9 @@ def sub_menu_filiais() -> None:
 
     while True:
         try:
-            print("\n" + "=" * 48)
-            print("        GESTÃO DE FILIAIS E DEPÓSITOS (CD)      ")
-            print("=" * 48)
+            print("\n" + "=" * 50)
+            print("        DEGEHUB ERP | GESTÃO DE FILIAIS & CDS     ")
+            print("=" * 50)
             print("1. Cadastrar Nova Filial / CD")
             print("2. Listar Todas as Filiais Ativas")
             print("3. Consultar Filial por Nome ou Código")
