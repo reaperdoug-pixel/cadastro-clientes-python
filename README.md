@@ -6,7 +6,7 @@
 
 ## 📸 Demonstração do Sistema
 
-![Demonstração do Sistema](Print.png)
+![Demonstração do Sistema](print.png)
 
 ---
 
@@ -110,11 +110,25 @@ Sistema de Gestão/
 1. Certifique-se de ter o Python 3.10+ instalado em seu sistema.
 2. Abra o terminal no diretório do projeto e execute:
 
-```bash
-python main.py
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python .\main.py
 ```
 
 > **Nota:** O arquivo de banco de dados `sistema.db` será criado e inicializado automaticamente com as tabelas, índices e filiais padrão na primeira execução.
+
+No primeiro uso, o sistema solicitará o login e a senha do administrador. A senha não é gravada em texto puro.
+
+---
+
+## Gestão de Estoque e Administração
+
+- O menu **Gestão de Estoque** reúne Produtos, Ajuste, Transferência, Preços e Promoções, Entrada de Notas e Kardex.
+- Havendo um CD ativo, aparece também **Distribuição de Produtos**, que permite somente CD para loja. Sem CD, a opção não aparece.
+- A entrada de nota recebe fornecedor, unidade de destino e vários itens; a confirmação atualiza saldos e gera `ENTRADA_NOTA` no Kardex em uma transação atômica.
+- Promoções são registradas por produto e unidade, com número, início, fim opcional, preço e usuário responsável. A promoção ativa dentro da vigência define o preço promocional.
+- O menu **Admin** oferece login e CRUD de usuários. Os perfis disponíveis são `ADMIN`, `ESTOQUISTA` e `CONSULTA`.
 
 ---
 

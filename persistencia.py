@@ -9,9 +9,13 @@ precificação multi-loja e auditoria de movimentações de estoque (Kardex).
 
 import sqlite3
 import time
+from datetime import date
 from contextlib import contextmanager
+from pathlib import Path
 
-NOME_BANCO = "sistema.db"
+# Mantém o banco no diretório do projeto, independentemente de onde o comando
+# ``python main.py`` seja executado após a pasta ser movida.
+NOME_BANCO = Path(__file__).resolve().with_name("sistema.db")
 MAX_RETRIES = 3
 RETRY_DELAY = 0.4  # segundos
 
@@ -92,6 +96,18 @@ def inicializar_banco() -> None:
                 telefone TEXT,
                 contato TEXT,
                 ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1))
+            );
+        """)
+
+        # Administração e auditoria das operações sensíveis.
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                login TEXT NOT NULL UNIQUE,
+                senha_hash TEXT NOT NULL,
+                data_criacao TEXT NOT NULL,
+                data_exclusao TEXT,
+                permissoes TEXT NOT NULL CHECK (permissoes IN ('ADMIN', 'ESTOQUISTA', 'CONSULTA'))
             );
         """)
 
@@ -263,6 +279,8 @@ def inicializar_banco() -> None:
             """)
             _criar_tabelas_filhas(cursor)
 
+        _migrar_promocoes_legadas(cursor)
+
 
 def _criar_tabelas_filhas(cursor: sqlite3.Cursor) -> None:
     """Cria as tabelas de precos, saldos e movimentacoes_estoque."""
@@ -283,6 +301,50 @@ def _criar_tabelas_filhas(cursor: sqlite3.Cursor) -> None:
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS promocoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            produto_id INTEGER NOT NULL,
+            loja_id INTEGER NOT NULL,
+            numero_promocao TEXT NOT NULL UNIQUE,
+            criacao_promocao TEXT NOT NULL,
+            preco_promocao REAL NOT NULL CHECK (preco_promocao > 0),
+            inicio_promocao TEXT NOT NULL,
+            fim_promocao TEXT,
+            data_alteracao_preco TEXT NOT NULL,
+            promo_ativa INTEGER NOT NULL DEFAULT 1 CHECK (promo_ativa IN (0, 1)),
+            usuario_id INTEGER,
+            FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
+            FOREIGN KEY (loja_id) REFERENCES lojas(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notas_entrada (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero_nota TEXT NOT NULL UNIQUE,
+            fornecedor_id INTEGER NOT NULL,
+            loja_id INTEGER NOT NULL,
+            usuario_id INTEGER NOT NULL,
+            data_entrada TEXT NOT NULL,
+            data_criacao TEXT NOT NULL,
+            FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id),
+            FOREIGN KEY (loja_id) REFERENCES lojas(id),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        );
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS itens_notas_entrada (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nota_entrada_id INTEGER NOT NULL,
+            produto_id INTEGER NOT NULL,
+            quantidade INTEGER NOT NULL CHECK (quantidade > 0),
+            FOREIGN KEY (nota_entrada_id) REFERENCES notas_entrada(id) ON DELETE CASCADE,
+            FOREIGN KEY (produto_id) REFERENCES produtos(id)
+        );
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS saldos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             produto_id INTEGER NOT NULL,
@@ -295,7 +357,6 @@ def _criar_tabelas_filhas(cursor: sqlite3.Cursor) -> None:
             UNIQUE (produto_id, loja_id)
         );
     """)
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -311,6 +372,26 @@ def _criar_tabelas_filhas(cursor: sqlite3.Cursor) -> None:
             FOREIGN KEY (loja_id) REFERENCES lojas (id) ON DELETE CASCADE
         );
     """)
+
+
+def _migrar_promocoes_legadas(cursor: sqlite3.Cursor) -> None:
+    """Conserva preços promocionais antigos como histórico sem usuário responsável."""
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='precos';")
+    if not cursor.fetchone():
+        return
+    cursor.execute("""
+        SELECT produto_id, loja_id, preco_promocao, data_atualizacao
+        FROM precos WHERE preco_promocao > 0
+    """)
+    for produto_id, loja_id, preco, data_atualizacao in cursor.fetchall():
+        numero = f"LEGADA-{produto_id}-{loja_id}"
+        cursor.execute("""
+            INSERT OR IGNORE INTO promocoes
+            (produto_id, loja_id, numero_promocao, criacao_promocao, preco_promocao,
+             inicio_promocao, fim_promocao, data_alteracao_preco, promo_ativa, usuario_id)
+            VALUES (?, ?, ?, ?, ?, '2000-01-01', NULL, ?, 1, NULL)
+        """, (produto_id, loja_id, numero, data_atualizacao, preco, data_atualizacao))
+    cursor.execute("UPDATE precos SET preco_promocao = 0 WHERE preco_promocao > 0;")
 
 
 # ==========================================
@@ -785,7 +866,7 @@ def carregar_produtos(loja_id: int = 1) -> list:
                    COALESCE(pr.preco_custo, 0.0), 
                    COALESCE(pr.markup, 0.0), 
                    COALESCE(pr.preco_venda, 0.0), 
-                   COALESCE(pr.preco_promocao, 0.0),
+                   COALESCE(pro.preco_promocao, 0.0),
                    COALESCE(s.quantidade, 0), 
                    p.categoria, 
                    p.data_cadastro, 
@@ -799,11 +880,18 @@ def carregar_produtos(loja_id: int = 1) -> list:
             FROM produtos p
             INNER JOIN fornecedores f ON p.fornecedor_id = f.id
             LEFT JOIN precos pr ON p.id = pr.produto_id AND pr.loja_id = ?
+            LEFT JOIN promocoes pro ON pro.id = (
+                SELECT id FROM promocoes
+                WHERE produto_id = p.id AND loja_id = ? AND promo_ativa = 1
+                  AND date(inicio_promocao) <= date('now')
+                  AND (fim_promocao IS NULL OR date(fim_promocao) >= date('now'))
+                ORDER BY id DESC LIMIT 1
+            )
             LEFT JOIN saldos s ON p.id = s.produto_id AND s.loja_id = ?
             LEFT JOIN lojas l ON l.id = ?
             WHERE p.ativo = 1
             ORDER BY p.nome ASC;
-        """, (loja_id, loja_id, loja_id))
+        """, (loja_id, loja_id, loja_id, loja_id))
         return cursor.fetchall()
 
 
@@ -815,7 +903,7 @@ def buscar_produto_por_id_banco(produto_id: int, loja_id: int = 1):
                    COALESCE(pr.preco_custo, 0.0), 
                    COALESCE(pr.markup, 0.0), 
                    COALESCE(pr.preco_venda, 0.0), 
-                   COALESCE(pr.preco_promocao, 0.0),
+                   COALESCE(pro.preco_promocao, 0.0),
                    COALESCE(s.quantidade, 0), 
                    p.categoria, 
                    p.data_cadastro, 
@@ -829,10 +917,17 @@ def buscar_produto_por_id_banco(produto_id: int, loja_id: int = 1):
             FROM produtos p
             INNER JOIN fornecedores f ON p.fornecedor_id = f.id
             LEFT JOIN precos pr ON p.id = pr.produto_id AND pr.loja_id = ?
+            LEFT JOIN promocoes pro ON pro.id = (
+                SELECT id FROM promocoes
+                WHERE produto_id = p.id AND loja_id = ? AND promo_ativa = 1
+                  AND date(inicio_promocao) <= date('now')
+                  AND (fim_promocao IS NULL OR date(fim_promocao) >= date('now'))
+                ORDER BY id DESC LIMIT 1
+            )
             LEFT JOIN saldos s ON p.id = s.produto_id AND s.loja_id = ?
             LEFT JOIN lojas l ON l.id = ?
             WHERE p.id = ? AND p.ativo = 1;
-        """, (loja_id, loja_id, loja_id, produto_id))
+        """, (loja_id, loja_id, loja_id, loja_id, produto_id))
         return cursor.fetchone()
 
 
@@ -844,7 +939,7 @@ def buscar_produtos_por_nome_banco(nome_busca: str, loja_id: int = 1) -> list:
                    COALESCE(pr.preco_custo, 0.0), 
                    COALESCE(pr.markup, 0.0), 
                    COALESCE(pr.preco_venda, 0.0), 
-                   COALESCE(pr.preco_promocao, 0.0),
+                   COALESCE(pro.preco_promocao, 0.0),
                    COALESCE(s.quantidade, 0), 
                    p.categoria, 
                    p.data_cadastro, 
@@ -858,11 +953,18 @@ def buscar_produtos_por_nome_banco(nome_busca: str, loja_id: int = 1) -> list:
             FROM produtos p
             INNER JOIN fornecedores f ON p.fornecedor_id = f.id
             LEFT JOIN precos pr ON p.id = pr.produto_id AND pr.loja_id = ?
+            LEFT JOIN promocoes pro ON pro.id = (
+                SELECT id FROM promocoes
+                WHERE produto_id = p.id AND loja_id = ? AND promo_ativa = 1
+                  AND date(inicio_promocao) <= date('now')
+                  AND (fim_promocao IS NULL OR date(fim_promocao) >= date('now'))
+                ORDER BY id DESC LIMIT 1
+            )
             LEFT JOIN saldos s ON p.id = s.produto_id AND s.loja_id = ?
             LEFT JOIN lojas l ON l.id = ?
             WHERE p.nome LIKE ? AND p.ativo = 1 
             ORDER BY p.nome ASC;
-        """, (loja_id, loja_id, loja_id, f"%{nome_busca}%"))
+        """, (loja_id, loja_id, loja_id, loja_id, f"%{nome_busca}%"))
         return cursor.fetchall()
 
 
@@ -910,18 +1012,25 @@ def obter_precos_produto_todas_lojas(produto_id: int) -> list:
                    COALESCE(pr.preco_custo, 0.0), 
                    COALESCE(pr.markup, 0.0), 
                    COALESCE(pr.preco_venda, 0.0), 
-                   COALESCE(pr.preco_promocao, 0.0),
+                   COALESCE(pro.preco_promocao, 0.0),
                    COALESCE(pr.data_atualizacao, '-')
             FROM lojas l
             LEFT JOIN precos pr ON l.id = pr.loja_id AND pr.produto_id = ?
+            LEFT JOIN promocoes pro ON pro.id = (
+                SELECT id FROM promocoes
+                WHERE produto_id = ? AND loja_id = l.id AND promo_ativa = 1
+                  AND date(inicio_promocao) <= date('now')
+                  AND (fim_promocao IS NULL OR date(fim_promocao) >= date('now'))
+                ORDER BY id DESC LIMIT 1
+            )
             WHERE l.ativo = 1
             ORDER BY l.id ASC;
-        """, (produto_id,))
+        """, (produto_id, produto_id))
         return cursor.fetchall()
 
 
-def atualizar_preco_loja_banco(produto_id: int, loja_id: int, preco_custo: float, 
-                              markup: float, preco_venda: float, preco_promocao: float, 
+def atualizar_preco_loja_banco(produto_id: int, loja_id: int, preco_custo: float,
+                              markup: float, preco_venda: float, preco_promocao: float,
                               data_atualizacao: str) -> bool:
     """Atualiza ou insere o preço/promoção de um produto em uma loja específica."""
     try:
@@ -933,7 +1042,7 @@ def atualizar_preco_loja_banco(produto_id: int, loja_id: int, preco_custo: float
                     preco_custo = excluded.preco_custo,
                     markup = excluded.markup,
                     preco_venda = excluded.preco_venda,
-                    preco_promocao = excluded.preco_promocao,
+                    preco_promocao = 0,
                     data_atualizacao = excluded.data_atualizacao;
             """, (produto_id, loja_id, preco_custo, markup, preco_venda, preco_promocao, data_atualizacao))
             return True
@@ -1031,3 +1140,117 @@ def carregar_extrato_kardex_banco(produto_id: int, loja_id: int = None) -> list:
                 ORDER BY m.id DESC;
             """, (produto_id,))
         return cursor.fetchall()
+
+
+# ==========================================
+# ADMINISTRAÇÃO, PROMOÇÕES E ENTRADA DE NOTAS
+# ==========================================
+
+def carregar_usuarios_ativos() -> list:
+    with transacao_banco() as cursor:
+        cursor.execute("""
+            SELECT id, login, data_criacao, permissoes
+            FROM usuarios WHERE data_exclusao IS NULL ORDER BY login
+        """)
+        return cursor.fetchall()
+
+
+def criar_usuario_banco(login: str, senha_hash: str, permissoes: str, data_criacao: str) -> int:
+    with transacao_banco() as cursor:
+        cursor.execute("""
+            INSERT INTO usuarios (login, senha_hash, data_criacao, permissoes)
+            VALUES (?, ?, ?, ?)
+        """, (login.strip().lower(), senha_hash, data_criacao, permissoes))
+        return cursor.lastrowid
+
+
+def buscar_usuario_por_login(login: str):
+    with transacao_banco() as cursor:
+        cursor.execute("""
+            SELECT id, login, senha_hash, data_criacao, data_exclusao, permissoes
+            FROM usuarios WHERE login = ? AND data_exclusao IS NULL
+        """, (login.strip().lower(),))
+        return cursor.fetchone()
+
+
+def atualizar_usuario_banco(usuario_id: int, permissoes: str, senha_hash: str | None = None) -> bool:
+    with transacao_banco() as cursor:
+        if senha_hash:
+            cursor.execute("""UPDATE usuarios SET permissoes = ?, senha_hash = ?
+                              WHERE id = ? AND data_exclusao IS NULL""",
+                           (permissoes, senha_hash, usuario_id))
+        else:
+            cursor.execute("""UPDATE usuarios SET permissoes = ?
+                              WHERE id = ? AND data_exclusao IS NULL""", (permissoes, usuario_id))
+        return cursor.rowcount > 0
+
+
+def inativar_usuario_banco(usuario_id: int, data_exclusao: str) -> bool:
+    with transacao_banco() as cursor:
+        cursor.execute("""UPDATE usuarios SET data_exclusao = ?
+                          WHERE id = ? AND data_exclusao IS NULL""", (data_exclusao, usuario_id))
+        return cursor.rowcount > 0
+
+
+def existe_cd_ativo() -> bool:
+    with transacao_banco() as cursor:
+        cursor.execute("SELECT 1 FROM lojas WHERE tipo = 'CENTRO_DISTRIBUICAO' AND ativo = 1 LIMIT 1")
+        return cursor.fetchone() is not None
+
+
+def criar_promocao_banco(dados: dict) -> int:
+    """Cria uma promoção por unidade, preservando as promoções anteriores."""
+    with transacao_banco() as cursor:
+        cursor.execute("""UPDATE promocoes SET promo_ativa = 0
+                          WHERE produto_id = ? AND loja_id = ? AND promo_ativa = 1""",
+                       (dados['produto_id'], dados['loja_id']))
+        cursor.execute("""
+            INSERT INTO promocoes
+            (produto_id, loja_id, numero_promocao, criacao_promocao, preco_promocao,
+             inicio_promocao, fim_promocao, data_alteracao_preco, promo_ativa, usuario_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+        """, (dados['produto_id'], dados['loja_id'], dados['numero_promocao'],
+              dados['criacao_promocao'], dados['preco_promocao'], dados['inicio_promocao'],
+              dados.get('fim_promocao'), dados['data_alteracao_preco'], dados['usuario_id']))
+        return cursor.lastrowid
+
+
+def registrar_nota_entrada_banco(dados_nota: dict, itens: list[dict]) -> tuple[bool, str]:
+    """Persiste nota, itens, saldos e Kardex como uma única operação atômica."""
+    if not itens:
+        return False, "A nota precisa conter ao menos um item."
+    try:
+        with transacao_banco() as cursor:
+            cursor.execute("""INSERT INTO notas_entrada
+                (numero_nota, fornecedor_id, loja_id, usuario_id, data_entrada, data_criacao)
+                VALUES (?, ?, ?, ?, ?, ?)""",
+                (dados_nota['numero_nota'], dados_nota['fornecedor_id'], dados_nota['loja_id'],
+                 dados_nota['usuario_id'], dados_nota['data_entrada'], dados_nota['data_criacao']))
+            nota_id = cursor.lastrowid
+            for item in itens:
+                produto_id, quantidade = item['produto_id'], item['quantidade']
+                if not isinstance(quantidade, int) or quantidade <= 0:
+                    raise ValueError("Quantidade da nota deve ser um inteiro maior que zero.")
+                cursor.execute("SELECT 1 FROM produtos WHERE id = ? AND ativo = 1", (produto_id,))
+                if not cursor.fetchone():
+                    raise ValueError(f"Produto {produto_id} não encontrado ou inativo.")
+                cursor.execute("""INSERT INTO itens_notas_entrada (nota_entrada_id, produto_id, quantidade)
+                                  VALUES (?, ?, ?)""", (nota_id, produto_id, quantidade))
+                cursor.execute("SELECT quantidade, estoque_minimo FROM saldos WHERE produto_id = ? AND loja_id = ?",
+                               (produto_id, dados_nota['loja_id']))
+                saldo = cursor.fetchone() or (0, 0)
+                anterior, minimo = saldo
+                novo = anterior + quantidade
+                cursor.execute("""INSERT INTO saldos (produto_id, loja_id, quantidade, estoque_minimo, data_atualizacao)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(produto_id, loja_id) DO UPDATE SET quantidade = excluded.quantidade,
+                        data_atualizacao = excluded.data_atualizacao""",
+                    (produto_id, dados_nota['loja_id'], novo, minimo, dados_nota['data_entrada']))
+                cursor.execute("""INSERT INTO movimentacoes_estoque
+                    (produto_id, loja_id, tipo, quantidade, saldo_anterior, saldo_novo, motivo, data_movimentacao)
+                    VALUES (?, ?, 'ENTRADA_NOTA', ?, ?, ?, ?, ?)""",
+                    (produto_id, dados_nota['loja_id'], quantidade, anterior, novo,
+                     f"Entrada da nota {dados_nota['numero_nota']}", dados_nota['data_entrada']))
+        return True, f"Nota {dados_nota['numero_nota']} registrada com sucesso."
+    except Exception as err:
+        return False, f"Falha ao registrar a nota: {err}"

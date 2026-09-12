@@ -36,10 +36,13 @@ from persistencia import (
     buscar_loja_por_id_banco,
     obter_precos_produto_todas_lojas,
     atualizar_preco_loja_banco,
+    criar_promocao_banco,
+    registrar_nota_entrada_banco,
     obter_saldos_produto_todas_lojas,
     registrar_movimentacao_estoque_banco,
     carregar_extrato_kardex_banco
 )
+import sessao
 
 
 # ==========================================
@@ -147,7 +150,7 @@ def cadastrar_produto() -> None:
         print("💡 Markup definido em 0: Informe o preço de venda manualmente.")
         preco_venda = obter_preco_venda_valido(preco_custo=preco_custo)
 
-    preco_promocao = obter_preco_promocao_valido(preco_venda=preco_venda)
+    preco_promocao = 0.0
     preco_efetivo, em_promocao = obter_preco_venda_efetivo(preco_venda, preco_promocao)
 
     # 6. Estoque Inicial
@@ -420,7 +423,26 @@ def gerenciar_precos_promocoes() -> None:
     preco_efetivo, em_promocao = obter_preco_venda_efetivo(venda_nova, promo_nova)
     data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-    sucesso = atualizar_preco_loja_banco(produto_id, loja_id, custo_novo, markup_novo, venda_nova, promo_nova, data_atual)
+    sucesso = atualizar_preco_loja_banco(produto_id, loja_id, custo_novo, markup_novo, venda_nova, 0.0, data_atual)
+    if sucesso and promo_nova > 0:
+        numero = input("Número da promoção: ").strip()
+        inicio = input("Início da promoção (AAAA-MM-DD): ").strip()
+        fim = input("Fim (AAAA-MM-DD, Enter para sem fim): ").strip() or None
+        try:
+            datetime.strptime(inicio, "%Y-%m-%d")
+            if fim:
+                datetime.strptime(fim, "%Y-%m-%d")
+            if not numero or not sessao.usuario_atual:
+                raise ValueError("Número da promoção ou sessão inválida")
+            criar_promocao_banco({
+                "produto_id": produto_id, "loja_id": loja_id, "numero_promocao": numero,
+                "criacao_promocao": data_atual, "preco_promocao": promo_nova,
+                "inicio_promocao": inicio, "fim_promocao": fim,
+                "data_alteracao_preco": data_atual, "usuario_id": sessao.usuario_atual["id"],
+            })
+        except (ValueError, TypeError) as err:
+            print(f"Promoção não criada: {err}")
+            return
     if sucesso:
         print(f"\n✅ Preço atualizado com sucesso para a filial '{loja_nome}'!")
         if em_promocao:
@@ -465,13 +487,9 @@ def movimentar_estoque_produto() -> None:
     saldo_atual = saldo_loja[3] if saldo_loja else 0
     print(f"📊 Saldo atual em '{loja_nome}': {saldo_atual} unidades.")
 
-    tipo = obter_tipo_movimentacao_valido()
-    
-    if tipo == "AJUSTE":
-        print(f"\nInforme o novo saldo total apurado em inventário físico (Saldo atual: {saldo_atual}):")
-        qtd_mov = obter_quantidade_valida()
-    else:
-        qtd_mov = obter_quantidade_movimentacao_valida()
+    tipo = "AJUSTE"
+    print(f"\nInforme o novo saldo total apurado em inventário físico (Saldo atual: {saldo_atual}):")
+    qtd_mov = obter_quantidade_valida()
 
     motivo = obter_motivo_movimentacao()
     data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -491,6 +509,58 @@ def movimentar_estoque_produto() -> None:
         print(f"📝 Motivo registrado: {motivo}")
     else:
         print(f"\n❌ Falha na movimentação: {mensagem}")
+
+
+def entrada_de_notas() -> None:
+    """Recebe uma nota multi-item e atualiza todo o estoque atomicamente."""
+    if not sessao.usuario_atual:
+        print("Faça login para registrar uma entrada de nota.")
+        return
+    print("\n" + "=" * 62)
+    print("                    ENTRADA DE NOTAS")
+    print("=" * 62)
+    numero_nota = input("Número da nota: ").strip()
+    fornecedores = carregar_fornecedores_ativos()
+    if not numero_nota or not fornecedores:
+        print("Informe o número da nota e cadastre um fornecedor antes de continuar.")
+        return
+    print("Fornecedores disponíveis:")
+    for fornecedor in fornecedores:
+        print(f"[{fornecedor[0]}] {fornecedor[2]}")
+    try:
+        fornecedor_id = int(input("ID do fornecedor: ").strip())
+    except ValueError:
+        print("Fornecedor inválido.")
+        return
+    if fornecedor_id not in [fornecedor[0] for fornecedor in fornecedores]:
+        print("Fornecedor não encontrado.")
+        return
+    loja_id, loja_nome = selecionar_loja_interativa("Selecione a unidade de destino")
+    itens = []
+    while True:
+        listar_produtos()
+        try:
+            produto_id = int(input("ID do produto (0 para finalizar): ").strip())
+        except ValueError:
+            print("ID inválido.")
+            continue
+        if produto_id == 0:
+            break
+        if not buscar_produto_por_id_banco(produto_id, loja_id):
+            print("Produto não encontrado.")
+            continue
+        quantidade = obter_quantidade_movimentacao_valida()
+        itens.append({"produto_id": produto_id, "quantidade": quantidade})
+        print(f"Item adicionado para {loja_nome}.")
+    if not itens:
+        print("Nenhum item informado; nota cancelada.")
+        return
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sucesso, mensagem = registrar_nota_entrada_banco({
+        "numero_nota": numero_nota, "fornecedor_id": fornecedor_id, "loja_id": loja_id,
+        "usuario_id": sessao.usuario_atual["id"], "data_entrada": agora, "data_criacao": agora,
+    }, itens)
+    print(("✅ " if sucesso else "❌ ") + mensagem)
 
 
 def consultar_extrato_kardex() -> None:

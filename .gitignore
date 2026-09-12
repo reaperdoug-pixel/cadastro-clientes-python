@@ -5,8 +5,7 @@ sistema.db
 # Ignora pastas e arquivos de cache do Python
 __pycache__/
 *.pyc
+.venv/
 
-# Ignora arquivos de documentação temporária, walkthrough e roteiro de estudos
-walkthrough.md
-implementation_plan.md
-sugestoes_estudo_evolucao.md
+# Ignora arquivos de documentação temporária, walkthrough, roteiro de estudos e relatórios de testes locais
+# Documentacao de projeto e relatorios devem ser versionados.

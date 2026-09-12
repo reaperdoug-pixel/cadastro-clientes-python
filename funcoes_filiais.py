@@ -236,7 +236,7 @@ def inativar_filial() -> None:
         print("\nOperação cancelada.")
 
 
-def transferir_estoque_filiais() -> None:
+def transferir_estoque_filiais(somente_cd_origem: bool = False) -> None:
     """
     Permite transferir mercadorias de uma filial de origem (ex: CD) para uma filial de destino (ex: Loja).
     """
@@ -245,14 +245,19 @@ def transferir_estoque_filiais() -> None:
     print("=" * 65)
 
     filiais = carregar_filiais_ativas()
+    origens_permitidas = [f for f in filiais if not somente_cd_origem or f[1] == "CENTRO_DISTRIBUICAO"]
+    destinos_permitidos = [f for f in filiais if not somente_cd_origem or f[1] != "CENTRO_DISTRIBUICAO"]
+    if somente_cd_origem and (not origens_permitidas or not destinos_permitidos):
+        print("É necessário ter um CD ativo e ao menos uma loja ativa para distribuir produtos.")
+        return
     if len(filiais) < 2:
         print("⚠️ É necessário ter pelo menos 2 filiais cadastradas para realizar transferências.")
         return
 
     # 1. Seleciona Filial de Origem
     print("\n--- 1. Selecione a Filial de ORIGEM (Saída de Estoque) ---")
-    ids_filiais = [f[0] for f in filiais]
-    for f in filiais:
+    ids_filiais = [f[0] for f in origens_permitidas]
+    for f in origens_permitidas:
         print(f"[{f[0]}] - {f[3]} ({formatar_tipo_filial(f[1])} | Código: {f[2]})")
     
     origem_id = obter_loja_id_valido(ids_filiais)
@@ -260,9 +265,9 @@ def transferir_estoque_filiais() -> None:
 
     # 2. Seleciona Filial de Destino
     print(f"\n--- 2. Selecione a Filial de DESTINO (Entrada de Estoque) ---")
-    ids_destino = [f_id for f_id in ids_filiais if f_id != origem_id]
-    for f in filiais:
-        if f[0] != origem_id:
+    ids_destino = [f[0] for f in destinos_permitidos if f[0] != origem_id]
+    for f in destinos_permitidos:
+        if f[0] in ids_destino:
             print(f"[{f[0]}] - {f[3]} ({formatar_tipo_filial(f[1])} | Código: {f[2]})")
             
     destino_id = obter_loja_id_valido(ids_destino)
@@ -324,3 +329,8 @@ def transferir_estoque_filiais() -> None:
         print(f"🕒 Data: {data_atual} | Motivo: {motivo}")
     else:
         print(f"\n❌ Falha na transferência: {mensagem}")
+
+
+def distribuir_produtos_cd() -> None:
+    """Distribui produtos de um Centro de Distribuição para uma loja."""
+    transferir_estoque_filiais(somente_cd_origem=True)
