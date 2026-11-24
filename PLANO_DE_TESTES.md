@@ -10,6 +10,8 @@ python -m unittest discover -s tests -v
 
 Cada caso cria um banco SQLite temporário. O banco real `sistema.db` não deve ser usado nos testes.
 
+No Linux, após ativar `.venv`, também é possível usar `./scripts/verificar.sh`. No Windows (PowerShell), use `./scripts/verificar.ps1`. Os dois scripts priorizam o Python da `.venv` e caem para o interpretador do sistema se ela não existir ou não for utilizável neste sistema operacional.
+
 ## Cobertura inicial
 
 - Inicialização do schema.
@@ -22,6 +24,10 @@ Cada caso cria um banco SQLite temporário. O banco real `sistema.db` não deve 
 - Criação do schema de usuários, promoções e notas de entrada.
 - Promoção ativa por produto e loja aplicada ao preço consultado.
 - Nota com múltiplos itens: saldo e lançamento `ENTRADA_NOTA` no Kardex.
+- Hash e validação de senha, usuário inativo, primeiro administrador e proteção contra inativação da própria sessão.
+- Acesso do perfil `CONSULTA` ao menu principal e às opções exclusivamente de leitura do estoque.
+- Rollback integral de nota inválida, número de nota único e migração idempotente de promoção legada.
+- Retry de conexão SQLite após bloqueio temporário.
 
 ## Registro
 
@@ -29,4 +35,4 @@ Registrar data, versão do código, ambiente Python, total, aprovados, falhos e 
 
 ## Pendências
 
-Testes de CLI completo para autenticação, concorrência, retry, migração de promoção legada, política de senhas, LGPD e critérios de aceite do PRD.
+Testes completos dos fluxos interativos de criação/edição, concorrência real entre processos, política de senhas, LGPD e critérios de aceite do PRD.

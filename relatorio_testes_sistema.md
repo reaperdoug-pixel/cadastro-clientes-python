@@ -5,11 +5,13 @@
 
 ## Validação atual — 2026-09-12
 
-- **Comando executado:** `& .venv\Scripts\python.exe -m unittest discover -s tests -v`
-- **Resultado:** 9 testes aprovados, 0 falhas e 0 erros.
-- **Cobertura desta entrega:** menu sem CD, schema de usuários/promoções/notas, bloqueio de saldo negativo, transferência, promoção ativa por loja e entrada de nota com saldo/Kardex.
+- **Comando de referência:** `./scripts/verificar.sh` no Linux, `./scripts/verificar.ps1` no Windows, ou `python -m unittest discover -s tests -v`.
+- **Ambiente exigido:** Python 3.10+; os testes usam banco SQLite temporário e não alteram `sistema.db`.
+- **Resultado desta revisão (2026-09-12):** 19 testes aprovados, 0 falhas e 0 erros.
+- **Revalidação (2026-11-24, Omarchy, Python 3.15.2):** 19 testes aprovados, 0 falhas e 0 erros. A `.venv` do projeto havia sido criada no Windows e não ativa no Linux; a suíte rodou com o Python do sistema.
+- **Cobertura desta entrega:** schema, estoque, transferência, promoção, nota de entrada, autenticação, sessão, menus de consulta, rollback, unicidade de nota, migração legada e retry SQLite.
 
-> O relatório de 36 testes abaixo é histórico da versão v2.0. A evidência reproduzível mais recente para o estado atual é a suíte de 9 testes acima.
+> O relatório de 36 testes abaixo é histórico da versão v2.0. A evidência reproduzível mais recente é a suíte de 19 testes acima.
 
 ---
 

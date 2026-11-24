@@ -1,5 +1,20 @@
 # Changelog
 
+## Documentação e ambiente Linux — 2026-11-24
+
+- README passou a documentar execução e testes no Linux/Omarchy, com uma seção curta para Windows.
+- Árvore do projeto, módulos, perfis e tipos de Kardex (incluindo `ENTRADA_NOTA`) alinhados ao código.
+- Criado `scripts/verificar.sh`, equivalente ao verificador em PowerShell.
+- A captura de tela versionada como `Print.png` foi renomeada para `print.png`, alinhada à referência do README.
+- Suíte reexecutada neste ambiente: 19 testes aprovados, 0 falhas e 0 erros.
+
+## Estabilização de ambiente e testes — 2026-09-12
+
+- Adicionados `.editorconfig` e `.gitattributes` para padronizar UTF-8 e finais de linha.
+- Documentado o bootstrap com `python -m venv` e criado `scripts/verificar.ps1` para executar a validação local.
+- Suíte `unittest` ampliada de 9 para 19 casos, cobrindo autenticação, sessão, menus de consulta, rollback de nota, unicidade, migração legada e retry SQLite.
+- Atualizados o plano e o relatório de testes com a evidência reproduzível mais recente.
+
 ## Gestão de Estoque e Administração — 2026-09-12
 
 - Renomeado o acesso principal para Gestão de Estoque e reorganizado o menu em Produtos, Distribuição, Transferência, Ajuste, Preços e Promoções, Entrada de Notas e Kardex.
